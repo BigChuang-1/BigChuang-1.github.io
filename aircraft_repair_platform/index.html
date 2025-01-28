@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>737-800 Maintenance Platform</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; }
+    canvas { display: block; }
+    #maintenanceDetails { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h2>Click on a part of the aircraft to input damage details</h2>
+  <div id="maintenanceDetails"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/loaders/GLTFLoader.js"></script>
+  <script>
+    let scene, camera, renderer, aircraftModel;
+
+    function init() {
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      renderer = new THREE.WebGLRenderer();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // Load 3D model of the aircraft
+      const loader = new THREE.GLTFLoader();
+      loader.load('737-800_model.glb', (gltf) => {
+        aircraftModel = gltf.scene;
+        scene.add(aircraftModel);
+        aircraftModel.scale.set(1, 1, 1);  // Adjust scale
+        aircraftModel.position.set(0, 0, -5);
+      });
+
+      camera.position.z = 5;
+
+      window.addEventListener('click', onMouseClick, false);
+      animate();
+    }
+
+    function onMouseClick(event) {
+      const mouse = new THREE.Vector2();
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(mouse, camera);
+
+      const intersects = raycaster.intersectObject(aircraftModel, true);
+
+      if (intersects.length > 0) {
+        const clickedObject = intersects[0].object;
+        document.getElementById('maintenanceDetails').innerHTML = `
+          <h3>You clicked on: ${clickedObject.name}</h3>
+          <label for="damageDepth">Damage Depth (cm):</label>
+          <input type="number" id="damageDepth" name="damageDepth">
+          <br>
+          <label for="damageWidth">Damage Width (cm):</label>
+          <input type="number" id="damageWidth" name="damageWidth">
+          <br>
+          <button onclick="submitDamage('${clickedObject.name}')">Submit</button>
+        `;
+      }
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    init();
+  </script>
+</body>
+</html>
